@@ -2,9 +2,9 @@
 {
     interface IImageStore
     {
-        void SetImageSize(int w, int h);
+        void SetImageSize(int width, int height);
         void ClearImage();
-        void SetPixel(Pixel p);
+        void SetPixel(Pixel pixel);
         void SaveImage(string name);
     }
 

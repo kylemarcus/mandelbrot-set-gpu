@@ -19,7 +19,7 @@ namespace MandelbrotSet
 
         public void InitFrame(int width, int height, int maxItr)
         {
-            _logger.LogDebug($"Initalizing frame size {width}x{height} with {maxItr} max itr");
+            _logger.LogDebug($"Initializing frame size {width}x{height} with {maxItr} max itr");
 
             _frameWidth = width;
             _frameHeight = height;
