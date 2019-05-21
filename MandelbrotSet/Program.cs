@@ -23,29 +23,20 @@ namespace MandelbrotSet
                     stopWatch.Start();
 
                     var runner = servicesProvider.GetRequiredService<MandelbrotSetRunner>();
-                    /*runner.RenderVideo(new FractalImageConfig
+
+                    runner.RenderVideo(new FractalImageConfig
                     {
-                        Width = 500,
-                        Height = 500,
-                        MaxItr = 30,
+                        Width = 1920,
+                        Height = 1080,
+                        MaxItr = 60,
                         Name = "out\\ms.png",
-                        MinRe = -2.0,
-                        MaxRe = 1.0,
-                        MinIm = -1.2
+                        MinRe = -0.758703023456444008810,
+                        MaxRe = -0.757731022039652920710,
+                        MinIm = 0.076033921475166087556
                     }, new FractalVideoConfig
                     {
-                        Frames = 160,
+                        Frames = 600,
                         ResChange = 0.001
-                    });*/
-                    runner.RenderImage(new FractalImageConfig
-                    {
-                        Width = 500,
-                        Height = 500,
-                        MaxItr = 30,
-                        Name = "out\\ms.png",
-                        MinRe = -2.0,
-                        MaxRe = 1.0,
-                        MinIm = -1.2
                     });
 
                     Console.WriteLine("Press ANY key to exit");
@@ -60,8 +51,8 @@ namespace MandelbrotSet
             }
             finally
             {
-                stopWatch.Stop();
-                logger.Info($"Program took {stopWatch.ElapsedMilliseconds / 1000} sec ({stopWatch.ElapsedMilliseconds} ms)");
+                stopWatch?.Stop();
+                logger.Info($"Program took {stopWatch?.ElapsedMilliseconds / 1000} sec ({stopWatch?.ElapsedMilliseconds} ms)");
 
                 // Ensure to flush and stop internal timers/threads before application-exit (Avoid segmentation fault on Linux)
                 LogManager.Shutdown();
@@ -72,7 +63,7 @@ namespace MandelbrotSet
         {
             var services = new ServiceCollection();
 
-            services.AddScoped<IFractal, MandelbrotSetGpu>();
+            services.AddScoped<IFractal, MandelbrotSet>();
             services.AddScoped<IImageStore, ImageSharpImageStore>();
 
             // Runner is the custom class

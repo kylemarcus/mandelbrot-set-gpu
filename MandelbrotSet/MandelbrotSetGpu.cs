@@ -36,22 +36,25 @@ namespace MandelbrotSet
         {
             int[] data = new int[_frameWidth * _frameHeight];
             CompileKernel(true);
-            CalcGPU(data, _frameWidth, _frameHeight, _maxIterations); // ILGPU-GPU-Mode
+            _logger.LogInformation(accelerator.Name);
+            CalcGPU(data, _frameWidth, _frameHeight, _maxIterations, (float) minRe, (float) maxRe,
+                (float) minIm); // ILGPU-GPU-Mode
 
-            for (int row = 0; row < _frameWidth; row++)
+            for (int i = 0; i < data.Length; i++)
             {
-                for (int col = 0; col < _frameHeight; col++)
+                var x = i % _frameWidth;
+                var y = i / _frameWidth;
+
+                if (data[i] == _maxIterations)
                 {
-                    if (data[row * _frameWidth + col] == _maxIterations)
-                    {
-                        PutBlackPixel(row, col);
-                    }
-                    else
-                    {
-                        PutColorPixel(row, col, data[row * _frameWidth + col]);
-                    }
+                    PutBlackPixel(x, y);
+                }
+                else
+                {
+                    PutColorPixel(x, y, data[i]);
                 }
             }
+            Dispose();
         }
 
         public void SaveFrame(string name)
@@ -59,16 +62,6 @@ namespace MandelbrotSet
             _logger.LogDebug($"Saving image {name}");
             _imageStore.SaveImage(name);
         }
-
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-
-
-
-
-
-
 
         private void PutBlackPixel(int x, int y)
         {
@@ -122,33 +115,22 @@ namespace MandelbrotSet
                 });
             }
         }
-
-
-
-
-
-        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-        /// <summary>
-        /// ILGPU kernel for Mandelbrot set.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <param name="max_iterations"></param>
-        /// <param name="output"></param>
+        
+        // ILGPU kernel for Mandelbrot set.
         static void MandelbrotKernel(
             Index index,
-            int width, int height, int max_iterations,
+            int width, int height, int max_iterations, float minRe, float maxRe, float minIm,
             ArrayView<int> output)
         {
-            float h_a = -2.0f;
-            float h_b = 1.0f;
-            float v_a = -1.0f;
-            float v_b = 1.0f;
+            float h_a = minRe;
+            float h_b = maxRe;
+            float v_a = minIm;
+            float v_b = minIm + (maxRe - minRe) * height / width;
 
             if (index >= output.Length)
+            {
                 return;
+            }
 
             int img_x = index % width;
             int img_y = index / width;
@@ -170,12 +152,9 @@ namespace MandelbrotSet
 
         private static Context context;
         private static Accelerator accelerator;
-        private static System.Action<Index, int, int, int, ArrayView<int>> mandelbrot_kernel;
+        private static System.Action<Index, int, int, int, float, float, float, ArrayView<int>> mandelbrot_kernel;
 
-        /// <summary>
-        /// Compile the mandelbrot kernel in ILGPU-CPU or ILGPU-CUDA mode.
-        /// </summary>
-        /// <param name="withCUDA"></param>
+        // Compile the mandelbrot kernel
         public static void CompileKernel(bool withCUDA)
         {
             context = new Context();
@@ -185,37 +164,27 @@ namespace MandelbrotSet
                 accelerator = new CPUAccelerator(context);
 
             mandelbrot_kernel = accelerator.LoadAutoGroupedStreamKernel<
-                Index, int, int, int, ArrayView<int>>(MandelbrotKernel);
+                Index, int, int, int, float, float, float, ArrayView<int>>(MandelbrotKernel);
         }
 
-        /// <summary>
-        /// Dispose lightning-context and cuda-context.
-        /// </summary>
         public static void Dispose()
         {
             accelerator.Dispose();
             context.Dispose();
         }
 
-        /// <summary>
-        /// Calculate the mandelbrot set on the GPU.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <param name="max_iterations"></param>
-        public static void CalcGPU(int[] buffer, int width, int height, int max_iterations)
+        // Calculate the mandelbrot set on the GPU.
+        public static void CalcGPU(int[] buffer, int width, int height, int max_iterations, float minRe, float maxRe, float minIm)
         {
             int num_values = buffer.Length;
             var dev_out = accelerator.Allocate<int>(num_values);
 
             // Launch kernel
-            mandelbrot_kernel(num_values, width, height, max_iterations, dev_out.View);
+            mandelbrot_kernel(num_values, width, height, max_iterations, minRe, maxRe, minIm, dev_out.View);
             accelerator.Synchronize();
             dev_out.CopyTo(buffer, 0, 0, num_values);
 
             dev_out.Dispose();
-            return;
         }
     }
 }

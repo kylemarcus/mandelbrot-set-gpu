@@ -31,7 +31,7 @@ namespace MandelbrotSet
 
             FfmpegRenderVideo();
 
-            Directory.Delete(IMAGE_OUT_DIR, true);
+            //Directory.Delete(IMAGE_OUT_DIR, true);
         }
 
         private void LoopFrames(IFractal fractal, FractalImageConfig fractalImageConfig, FractalVideoConfig fractalVideoConfig)
@@ -48,9 +48,10 @@ namespace MandelbrotSet
 
                 RenderSingleFrame(fractal, myFractalImageConfig);
 
-                myFractalImageConfig.MinRe += fractalVideoConfig.ResChange;
-                myFractalImageConfig.MaxRe -= fractalVideoConfig.ResChange;
-                myFractalImageConfig.MinIm += fractalVideoConfig.ResChange;
+                //myFractalImageConfig.MinRe += fractalVideoConfig.ResChange;
+                //myFractalImageConfig.MaxRe -= fractalVideoConfig.ResChange;
+                //myFractalImageConfig.MinIm += fractalVideoConfig.ResChange;
+                myFractalImageConfig.MaxItr += 1;
             }
         }
 
